@@ -39,6 +39,20 @@ class ViewController: UIViewController, WKNavigationDelegate, UIDocumentInteract
     
         NotificationCenter.default.addObserver(self, selector: #selector(self.keyboardWillHide(_:)), name: UIResponder.keyboardWillHideNotification , object: nil)
         
+        // Add keyboard shortcut for Mac only
+        if UIDevice.current.userInterfaceIdiom == .mac {
+            setupKeyboardShortcuts()
+        }
+    }
+    
+    private func setupKeyboardShortcuts() {
+        let refreshCommand = UIKeyCommand(
+            title: "Refresh",
+            action: #selector(refreshWebView(_:)),
+            input: "r",
+            modifierFlags: .command
+        )
+        addKeyCommand(refreshCommand)
     }
 
     override func viewDidLayoutSubviews() {
@@ -59,10 +73,12 @@ class ViewController: UIViewController, WKNavigationDelegate, UIDocumentInteract
         ArboladoUrbano.webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
 
         if(pullToRefresh){
-            let refreshControl = UIRefreshControl()
-            refreshControl.addTarget(self, action: #selector(refreshWebView(_:)), for: UIControl.Event.valueChanged)
-            ArboladoUrbano.webView.scrollView.addSubview(refreshControl)
-            ArboladoUrbano.webView.scrollView.bounces = true
+            if UIDevice.current.userInterfaceIdiom != .mac {
+                let refreshControl = UIRefreshControl()
+                refreshControl.addTarget(self, action: #selector(refreshWebView(_:)), for: UIControl.Event.valueChanged)
+                ArboladoUrbano.webView.scrollView.addSubview(refreshControl)
+                ArboladoUrbano.webView.scrollView.bounces = true
+            }
         }
 
         if #available(iOS 15.0, *), adaptiveUIStyle {
