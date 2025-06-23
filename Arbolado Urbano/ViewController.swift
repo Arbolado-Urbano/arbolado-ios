@@ -1,10 +1,11 @@
 import UIKit
 import WebKit
+import CoreLocation
 
 var webView: WKWebView! = nil
 
-class ViewController: UIViewController, WKNavigationDelegate, UIDocumentInteractionControllerDelegate {
-    
+class ViewController: UIViewController, CLLocationManagerDelegate, WKNavigationDelegate, UIDocumentInteractionControllerDelegate {
+    var locationManager: CLLocationManager!
     var documentController: UIDocumentInteractionController?
     func documentInteractionControllerViewControllerForPreview(_ controller: UIDocumentInteractionController) -> UIViewController {
         return self
@@ -43,6 +44,14 @@ class ViewController: UIViewController, WKNavigationDelegate, UIDocumentInteract
         if UIDevice.current.userInterfaceIdiom == .mac {
             setupKeyboardShortcuts()
         }
+        
+        locationManager = CLLocationManager()
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        
+        let scriptSource = "ios = { getCurrentPosition: () => webkit.messageHandlers.locationHandler.postMessage('getCurrentPosition') }"
+        let script = WKUserScript(source: scriptSource, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        ArboladoUrbano.webView.configuration.userContentController.addUserScript(script)
     }
     
     private func setupKeyboardShortcuts() {
@@ -244,7 +253,7 @@ extension UIColor {
 }
 
 extension ViewController: WKScriptMessageHandler {
-  func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if message.name == "print" {
             printView(webView: ArboladoUrbano.webView)
         }
@@ -260,5 +269,46 @@ extension ViewController: WKScriptMessageHandler {
         if message.name == "push-token" {
             handleFCMToken()
         }
-  }
+        if message.name == "locationHandler" {
+            switch locationManager.authorizationStatus {
+            case .authorizedWhenInUse, .authorizedAlways:
+                locationManager.requestLocation()
+            case .notDetermined:
+                locationManager.requestWhenInUseAuthorization()
+            case .denied, .restricted:
+                // Location access denied - check Settings
+                let script = "document.dispatchEvent(new CustomEvent('arbolado:ios/location', { detail: { error: '2' }}))"
+                ArboladoUrbano.webView?.evaluateJavaScript(script)
+            @unknown default:
+                break
+            }
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        switch status {
+        case .authorizedWhenInUse, .authorizedAlways:
+            locationManager.requestLocation()
+        case .denied, .restricted:
+            // Location access denied
+            let script = "document.dispatchEvent(new CustomEvent('arbolado:ios/location', { detail: { error: '1' }}))"
+            ArboladoUrbano.webView?.evaluateJavaScript(script)
+        case .notDetermined:
+            break
+        @unknown default:
+            break
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let location = locations.first {
+            let script = "document.dispatchEvent(new CustomEvent('arbolado:ios/location', { detail: { coords: { latitude: \(location.coordinate.latitude), longitude: \(location.coordinate.longitude) } } }))"
+            ArboladoUrbano.webView?.evaluateJavaScript(script)
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        let script = "document.dispatchEvent(new CustomEvent('arbolado:ios/location', { detail: { error: '3' }}))"
+        ArboladoUrbano.webView?.evaluateJavaScript(script)
+    }
 }

@@ -5,9 +5,11 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Capture Audio by user request</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Track current location by user request</string>
+	<string>Tu ubicación nos permite mostrarte árboles cercanos a ti y te permite agregar nuevos árboles a nuestro sistema con mayor facilidad</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Capture Video by user request</string>
+	<string>Precisamos acceso a tu cámara para que puedas cargar fotos de árboles para identificar su especie</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Precisamos acceso a tus fotos para que puedas cargar fotos de árboles para identificar su especie</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -32,7 +34,7 @@
 			<key>CFBundleURLName</key>
 			<string></string>
 			<key>CFBundleURLSchemes</key>
-			<array />
+			<array/>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
@@ -106,6 +108,5 @@
 	<array>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	</array>
-	
 </dict>
 </plist>
